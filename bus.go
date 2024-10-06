@@ -60,7 +60,7 @@ type BusInterface interface {
 	Flush()
 
 	// Wait until all published message delivered with timeout
-	FlushEx()
+	FlushEx(timeout time.Duration) error
 
 	// Cancel bus, unsubscribe all subscribers, cancel goroutines
 	Cancel()
