@@ -33,8 +33,8 @@ func Count(topic string) int {
 //
 //	topic - event topic
 //	msg - message (event payload)
-func Publish(topic string, msg any) {
-	bus.Publish(topic, msg)
+func Publish(topic string, msg any) int {
+	return bus.Publish(topic, msg)
 }
 
 // Get all subscribed topics

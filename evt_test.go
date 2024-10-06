@@ -13,7 +13,10 @@ import (
 func TestDefault(t *testing.T) {
 	var sub SubInterface = Subscribe("topic", 0)
 
-	Publish("topic", "hello")
+	count := Publish("topic", "hello")
+	if count != 1 {
+		t.Fatalf(`Publish("hello") return %d, want 1`, count)
+	}
 
 	msg, ok := <-sub.C()
 	if !ok {
@@ -92,12 +95,14 @@ func TestEvt(t *testing.T) {
 
 	sub0 := bus.Subscribe("even", 0)
 	sub1 := bus.Subscribe("odd", 0)
+	sub2 := bus.Subscribe("even", 1)
+	sub3 := bus.Subscribe("odd", 2)
 
 	fmt.Println("topics:", bus.topics)
 	for _, topic := range []string{"even", "odd"} {
 		count := bus.Count(topic)
-		if count != 1 {
-			t.Fatalf("bus.Count(%s) return %d, want 1", topic, count)
+		if count != 2 {
+			t.Fatalf("bus.Count(%s) return %d, want 2", topic, count)
 		}
 		fmt.Printf("bus.Count(%s)=%d\n", topic, count)
 	}
@@ -107,9 +112,11 @@ func TestEvt(t *testing.T) {
 	go goPub(bus, "even", 0, num, t)
 	go goPub(bus, "odd", 1, num, t)
 
-	wgSub.Add(2)
+	wgSub.Add(4)
 	go goSub(sub0, 0, t)
 	go goSub(sub1, 1, t)
+	go goSub(sub2, 0, t)
+	go goSub(sub3, 1, t)
 
 	wgPub.Wait()
 

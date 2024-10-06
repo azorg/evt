@@ -66,26 +66,28 @@ func (bus *Bus) Subscribe(topic string, size int) *Sub {
 //
 //	topic - event topic
 //	msg - message (event payload)
-func (bus *Bus) Publish(topic string, msg any) {
-	bus.wgPub.Add(1)
-	go func() {
-		defer bus.wgPub.Done()
-		bus.mx.RLock()
-		defer bus.mx.RUnlock()
+func (bus *Bus) Publish(topic string, msg any) int {
+	bus.mx.RLock()
+	defer bus.mx.RUnlock()
 
-		ss, ok := bus.topics[topic]
-		if !ok {
-			return // topic not found
-		}
+	ss, ok := bus.topics[topic]
+	if !ok {
+		return 0 // topic not found
+	}
 
-		// Send event to all subscibers
-		for sub := range ss {
+	// Send event to all subscribers
+	for sub := range ss {
+		bus.wgPub.Add(1)
+		go func() {
+			defer bus.wgPub.Done()
 			select {
 			case sub.ch <- msg: // write to subscriber channel
 			case <-bus.ctx.Done(): // cancel by context
-			}
-		}
-	}()
+			} // select
+		}()
+	} // for
+
+	return len(ss)
 }
 
 // Get all subscribed topics
