@@ -62,7 +62,8 @@ func (bus *Bus) Subscribe(topic string, size int) *Sub {
 	return sub
 }
 
-// Publish event to topic (non-blocking)
+// Publish event to topic (non-blocking),
+// return number of actial subscribers
 //
 //	topic - event topic
 //	msg - message (event payload)

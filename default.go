@@ -7,14 +7,14 @@ import (
 	"time"
 )
 
-// Global event bus (one instance)
+// Default event bus (one instance)
 var bus *Bus
 
 func init() {
 	bus = New(context.Background())
 }
 
-// Get blobal (main) event bus
+// Get default event bus
 func DefaultBus() *Bus {
 	return bus
 }
@@ -29,7 +29,8 @@ func Count(topic string) int {
 	return bus.Count(topic)
 }
 
-// Publish event to topic (non-blocking)
+// Publish event to topic (non-blocking),
+// return number of actual subscribers
 //
 //	topic - event topic
 //	msg - message (event payload)
