@@ -14,10 +14,17 @@ import (
 func TestDefault(t *testing.T) {
 	var sub SubInterface = Subscribe("topic", 0)
 
-	count := Publish("topic", "hello")
-	if count != 1 {
-		t.Fatalf(`Publish("hello") return %d, want 1`, count)
-	}
+	go func() {
+		count, _ := Publish("topic", "hello")
+		if count != 1 {
+			t.Fatalf(`Publish("hello") return %d, want 1`, count)
+		}
+
+		count, _ = PublishEx("topic", "world", time.Second)
+		if count != 1 {
+			t.Fatalf(`Publish("world") return %d, want 1`, count)
+		}
+	}()
 
 	msg, ok := <-sub.C()
 	if !ok {
@@ -28,7 +35,18 @@ func TestDefault(t *testing.T) {
 	if str != "hello" {
 		t.Fatalf(`msg, ok := <-sub.c(): return "%s", want "hello"`, str)
 	}
-	fmt.Println("receive:", str)
+	fmt.Println("receive #1:", str)
+
+	msg, ok = sub.Wait()
+	if !ok {
+		t.Fatalf("msg, ok := <-sub.c(): return ok=false, want true")
+	}
+
+	str = msg.(string)
+	if str != "world" {
+		t.Fatalf(`msg, ok := <-sub.c(): return "%s", want "world"`, str)
+	}
+	fmt.Println("receive #2:", str)
 
 	topics := Topics()
 	if num := len(topics); num != 1 {
@@ -43,10 +61,10 @@ func TestDefault(t *testing.T) {
 	start := time.Now()
 	Cancel()
 
-	ok = Wait(time.Second)
+	err := WaitEx(time.Second)
 	dt := time.Now().Sub(start)
-	if !ok {
-		t.Fatalf("Wait(time.Second) return %v, want true", ok)
+	if err != nil {
+		t.Fatalf("Wait(time.Second) return err=%v, want nil", err)
 	}
 	fmt.Printf("cancel: dt=%v\n", dt)
 
@@ -87,15 +105,15 @@ func goPub(bus *Bus, topic string, start, num int, t *testing.T) {
 
 	for i := start; i < num; i += 2 {
 		start := time.Now()
-		bus.PublishEx(topic, i, time.Second)
+		bus.PublishEx(topic, i, 1*time.Second) // FIXME: magic
 		dt := time.Now().Sub(start)
-		fmt.Println(topic, ">", i, "dt:", dt)
+		fmt.Println("publish:", topic, ">", i, "dt:", dt)
 	} // for
 }
 
 // Test concurrency
 func TestEvt(t *testing.T) {
-	bus := New(context.Background())
+	bus := New(context.Background(), 0)
 
 	sub0 := bus.Subscribe("even", 0)
 	sub1 := bus.Subscribe("odd", 0)
@@ -111,7 +129,7 @@ func TestEvt(t *testing.T) {
 		fmt.Printf("bus.Count(%s)=%d\n", topic, count)
 	}
 
-	num := 10
+	num := 20
 	wgPub.Add(2)
 	go goPub(bus, "even", 0, num, t)
 	go goPub(bus, "odd", 1, num, t)
@@ -126,10 +144,10 @@ func TestEvt(t *testing.T) {
 
 	start := time.Now()
 	bus.Cancel()
-	ok := bus.Wait(time.Second)
+	err := bus.WaitEx(time.Second)
 	dt := time.Now().Sub(start)
-	if !ok {
-		t.Fatalf("bus.Wait(time.Second) return %v, want true", ok)
+	if err != nil {
+		t.Fatalf("bus.Wait(time.Second) return err=%v, want nil", err)
 	}
 	fmt.Printf("cancel: dt=%v\n", dt)
 
@@ -138,18 +156,30 @@ func TestEvt(t *testing.T) {
 
 // Test publish with timeout
 func TestPublishEx(t *testing.T) {
-	bus := New(context.Background())
+	bus := New(context.Background(), 0)
+
 	_ = bus.Subscribe("lazy", 0)
+
 	start := time.Now()
-	bus.PublishEx("lazy", "nothing", 800*time.Millisecond)
-	bus.PublishEx("lazy", "nothing", 900*time.Millisecond)
 	bus.PublishEx("lazy", "nothing", 1000*time.Millisecond)
-	bus.Flush()
 	dt := time.Now().Sub(start)
 	if dt < 900*time.Millisecond ||
 		dt > 1100*time.Millisecond {
 		t.Fatalf("bad delay: dt=%v, want 1s", dt)
 	}
+	fmt.Println("dt (1s):", dt)
+
+	_ = bus.Subscribe("stupid", 0)
+	start = time.Now()
+	bus.PublishEx("stupid", "nothing", 500*time.Millisecond)
+	bus.Flush()
+	dt = time.Now().Sub(start)
+	if dt < 400*time.Millisecond ||
+		dt > 600*time.Millisecond {
+		t.Fatalf("bad delay: dt=%v, want 500ms", dt)
+	}
+	fmt.Println("dt (500ms):", dt)
+
 }
 
 // EOF: "evt_test.go"

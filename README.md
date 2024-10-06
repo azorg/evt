@@ -6,6 +6,16 @@
  - Non blocking publish
  - Gracefull shutdown
 
+
+## Block diagram of two event ways
+
+### Short way (may block)
+`PublishNow[Ex](topic, message)` -> Each subscriber channel -> Each subscriber
+
+### Long way (non-blocking)
+`Publish[Ex](topic, message)` -> Common inbox channel -> Bus monitor ->
+Each subscriber channel -> Each subscriber
+
 ## Examples
 
 ### Create new event bus (broker)
@@ -39,6 +49,12 @@
     }
     ...
   } // select
+```
+
+### Publish event to topic (may block)
+```go
+  msg := "hello"
+  bus.PublishNow("topic", msg)
 ```
 
 ### Publish event to topic (non-blocking)

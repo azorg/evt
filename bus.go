@@ -11,39 +11,79 @@ import (
 // Subscibers set
 type subs map[*Sub]struct{}
 
+// Event
+type Evt struct {
+	Topic   string        // topic name
+	Msg     any           // payload
+	Timeout time.Duration // delivery timeout or zero
+}
+
 // Event bus (broker)
 type Bus struct {
 	topics map[string]subs // subscribers set for eatch topic
-	mx     sync.RWMutex
-	ctx    context.Context
-	cancel func()
-	wgPub  sync.WaitGroup
-	wgWait sync.WaitGroup
+	mx     sync.RWMutex    // mutex for topics
+	inbox  chan Evt        // inbox buffer channel
+	ctx    context.Context // cancel context
+	cancel func()          // context handler
+	wgMon  sync.WaitGroup  // wait monitor goroutine
+	wgPub  sync.WaitGroup  // wait publisher goroutines
+	wgBuf  sync.WaitGroup  // wait inbox buffered message
 }
 
 // Event bus interface
 type BusInterface interface {
-	Subscribe(topic string, size int) *Sub // subscribe to topic event
-	Publish(topic string, msg any) int     // publish event to topic (non-blocking)
+	// Subscribe to topic event
+	Subscribe(topic string, size int) *Sub
 
-	// Publish event to topic (non-blocking) with timeout
-	PublishEx(topic string, msg any, timeout time.Duration) int
+	// Get all subscribed topics
+	Topics() []string
 
-	// Wait until all message publish and delivered
+	// Get count of event subscribers
+	Count(topic string) int
+
+	// Get inbox channel
+	C() chan<- Evt
+
+	// Publish event to topic immediately (may blocking)
+	Publish(topic string, msg any) int
+
+	// Publish event to topic immediately with timeout (may blocking)
+	PublishEx(string, msg any) int
+
+	// Publish event to topic via inbox channel (non-blocking)
+	PublishInbox(topic string, msg any) bool
+
+	// Publish event to topic via inbox channel with timeout (non-blocking)
+	PublishInboxEx(topic string, msg any) bool
+
+	// Wait until all published message delivered
 	Flush()
 
-	Topics() []string                 // get all subscribed topics
-	Count(topic string) int           // get count of subscribers
-	Cancel()                          // cancel bus, unsubscribe all subscribers
-	Wait(timeout time.Duration) error // wait until graceful shutdown
+	// Wait until all published message delivered with timeout
+	FlushEx()
+
+	// Cancel bus, unsubscribe all subscribers, cancel goroutines
+	Cancel()
+
+	// Wait until graceful shutdown
+	Wait()
+
+	// Wait until graceful shutdown with timeout
+	WaitEx(timeout time.Duration) error
 }
 
 // Create new event bus (broker)
-func New(ctx context.Context) *Bus {
-	bus := &Bus{topics: make(map[string]subs)}
+//
+//	ctx - cancel context
+//	inboxSize - inbox channel size
+func New(ctx context.Context, inboxSize int) *Bus {
+	bus := &Bus{
+		topics: make(map[string]subs),
+		inbox:  make(chan Evt, inboxSize),
+	}
 	bus.ctx, bus.cancel = context.WithCancel(ctx)
-	bus.wgWait.Add(1)
-	go bus.goWaitCancel()
+	bus.wgMon.Add(1)
+	go bus.goMonitor()
 	return bus
 }
 
@@ -67,72 +107,6 @@ func (bus *Bus) Subscribe(topic string, size int) *Sub {
 	ss[sub] = struct{}{} // add subscriber to set
 	sub.pss = &ss
 	return sub
-}
-
-// Publish event to topic (non-blocking),
-// return number of actial subscribers
-//
-//	topic - event topic
-//	msg - message (event payload)
-func (bus *Bus) Publish(topic string, msg any) int {
-	bus.mx.RLock()
-	defer bus.mx.RUnlock()
-
-	ss, ok := bus.topics[topic]
-	if !ok {
-		return 0 // topic not found
-	}
-
-	// Send event to all subscribers
-	for sub := range ss {
-		bus.wgPub.Add(1)
-		go func() {
-			defer bus.wgPub.Done()
-			select {
-			case sub.ch <- msg: // write to subscriber channel
-			case <-bus.ctx.Done(): // cancel by context
-			} // select
-		}()
-	} // for
-
-	return len(ss)
-}
-
-// Publish event to topic (non-blocking) with timeout,
-// return number of actial subscribers
-//
-//		topic - event topic
-//		msg - message (event payload)
-//	 timeout - timeoit of write to each subscriber channel
-func (bus *Bus) PublishEx(topic string, msg any, timeout time.Duration) int {
-	bus.mx.RLock()
-	defer bus.mx.RUnlock()
-
-	ss, ok := bus.topics[topic]
-	if !ok {
-		return 0 // topic not found
-	}
-
-	// Send event to all subscribers
-	for sub := range ss {
-		bus.wgPub.Add(1)
-		go func() {
-			defer bus.wgPub.Done()
-			select {
-			case sub.ch <- msg: // write to subscriber channel
-			case <-time.After(timeout): // break by timeout
-			case <-bus.ctx.Done(): // cancel by context
-			} // select
-		}()
-	} // for
-
-	return len(ss)
-
-}
-
-// Wait until all message publish and delivered
-func (bus *Bus) Flush() {
-	bus.wgPub.Wait()
 }
 
 // Get all subscribed topics
@@ -160,47 +134,215 @@ func (bus *Bus) Count(topic string) int {
 	return len(subs)
 }
 
-// Cancel bus, unsubscribe all subscribers, cancel publisher goroutines
-func (bus *Bus) Cancel() {
-	bus.cancel()
+// Get inbox channel
+func (bus *Bus) C() chan<- Evt {
+	return bus.inbox
 }
 
-// Wait until graceful shutdown, return false on timeout
-func (bus *Bus) Wait(timeout time.Duration) bool {
+// Publish event to topic immediately (may blocking)
+//
+//	topic - event topic
+//	msg - message (event payload)
+//
+//	count - actual number of topic subscribers
+//	err - nil or context.Canceled
+func (bus *Bus) Publish(topic string, msg any) (
+	count int, err error) {
+
+	bus.mx.RLock()
+	defer bus.mx.RUnlock()
+
+	ss, ok := bus.topics[topic]
+	if !ok {
+		return 0, nil // topic not found
+	}
+
+	// Send event to all topic subscribers
+	for sub := range ss {
+		select {
+		case sub.ch <- msg: // write to subscriber channel
+		case <-bus.ctx.Done(): // cancel by context
+			return 0, context.Canceled
+		} // select
+		count++
+	} // for
+
+	return count, nil
+}
+
+// Publish event to topic immediately with timeout (may blocking)
+//
+//	 topic - event topic
+//	 msg - message (event payload)
+//		timeout - timeoit of write to each subscriber channel
+//
+//	 count - actual number of topic subscribers
+//	 err - nil or context.Canceled or ErrTimeout
+func (bus *Bus) PublishEx(
+	topic string, msg any, timeout time.Duration) (
+	count int, err error) {
+
+	bus.mx.RLock()
+	defer bus.mx.RUnlock()
+
+	ss, ok := bus.topics[topic]
+	if !ok {
+		return 0, nil // topic not found
+	}
+
+	// Send event to all topic subscribers
+	for sub := range ss {
+		select {
+		case sub.ch <- msg: // write to subscriber channel
+		case <-bus.ctx.Done(): // cancel by context
+			return 0, context.Canceled
+		case <-time.After(timeout): // cancel by timeout
+			return count, ErrTimeout
+		} // select
+		count++
+	} // for
+
+	return count, nil
+}
+
+// Publish event to topic via inbox channel (non-blocking)
+//
+//	topic - event topic
+//	msg - message (event payload)
+func (bus *Bus) PublishInbox(topic string, msg any) {
+	bus.wgPub.Add(1)
+	go func() {
+		defer bus.wgPub.Done()
+		select {
+		case bus.inbox <- Evt{Topic: topic, Msg: msg}:
+			bus.wgBuf.Add(1)
+		case <-bus.ctx.Done(): // cancel by context
+		} // select
+	}()
+}
+
+// Publish event to topic via inbox channel with timeout (non-blocking)
+//
+//	topic - event topic
+//	msg - message (event payload)
+//	timeout - timeoit of write to each subscriber channel
+func (bus *Bus) PublishInboxEx(topic string, msg any, timeout time.Duration) {
+	bus.wgPub.Add(1)
+	go func() {
+		defer bus.wgPub.Done()
+		select {
+		case bus.inbox <- Evt{Topic: topic, Msg: msg, Timeout: timeout}:
+			bus.wgBuf.Add(1)
+		case <-bus.ctx.Done(): // cancel by context
+		case <-time.After(timeout): // break by timeout
+		} // select
+	}()
+}
+
+// Wait until all published message delivered
+func (bus *Bus) Flush() {
+	bus.wgPub.Wait()
+	bus.wgBuf.Wait()
+}
+
+// Wait until all published message delivered with timeout
+func (bus *Bus) FlushEx(timeout time.Duration) error {
+	if timeout == time.Duration(0) { // infinite wait
+		bus.Flush()
+		return nil
+	}
+
 	done := make(chan struct{})
 	go func() {
-		bus.wgWait.Wait()
+		bus.Flush()
 		close(done)
 	}()
 
 	select {
 	case <-done:
-		return true // shutdown success
+		return nil // shutdown success
 	case <-time.After(timeout):
-		return false // timeout
+		return ErrTimeout // timeout
 	}
 }
 
-// Wait context cancel
-func (bus *Bus) goWaitCancel() {
-	defer bus.wgWait.Done()
-	<-bus.ctx.Done() // wait cancel
+// Cancel bus, unsubscribe all subscribers, cancel goroutines
+func (bus *Bus) Cancel() {
+	bus.cancel()
+}
+
+// Wait until graceful shutdown
+func (bus *Bus) Wait() {
 	bus.wgPub.Wait()
+	bus.wgMon.Wait()
+}
+
+// Wait until graceful shutdown with timeout
+func (bus *Bus) WaitEx(timeout time.Duration) error {
+	if timeout == time.Duration(0) { // infinite wait
+		bus.Wait()
+		return nil
+	}
+
+	done := make(chan struct{})
+	go func() {
+		bus.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		return nil // shutdown success
+	case <-time.After(timeout):
+		return ErrTimeout // timeout
+	}
+}
+
+// Enent bus monitor
+func (bus *Bus) goMonitor() {
+	defer bus.wgMon.Done()
+	defer bus.shutdown()
+	for {
+		select {
+		case <-bus.ctx.Done(): // cancel by context
+			return
+
+		case evt, ok := <-bus.inbox: // send event to subscribers
+			if !ok { // its looks like cancel
+				return
+			}
+			if evt.Timeout == time.Duration(0) {
+				bus.Publish(evt.Topic, evt.Msg)
+			} else {
+				bus.PublishEx(evt.Topic, evt.Msg, evt.Timeout)
+			}
+			bus.wgBuf.Done()
+		} // select
+	} // for
+}
+
+// Shutdown bus: wait publisher goroutines, unsubscribe all subscribers,
+// close inbox channel
+func (bus *Bus) shutdown() {
+	bus.wgPub.Wait() // wait publisher goroutines
 
 	bus.mx.Lock()
 	defer bus.mx.Unlock()
 
+	// Unsubscribe all subscribers
 	for topic, ss := range bus.topics {
 		for sub := range ss {
 			delete(ss, sub) // delete subscriber from set
-			close(sub.ch)   // close event channel
+			close(sub.ch)   // close subscriber channel
 
 			// Mark as unsubscribed
 			sub.bus = nil
 			sub.pss = nil
 		}
 		delete(bus.topics, topic)
-	}
+	} // for
+
+	close(bus.inbox) // close inbox channel
 }
 
 // EOF: "bus.go"
