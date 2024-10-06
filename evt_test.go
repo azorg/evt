@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// Test default (global) broker
 func TestDefault(t *testing.T) {
 	var sub SubInterface = Subscribe("topic", 0)
 
@@ -86,12 +87,13 @@ func goPub(bus *Bus, topic string, start, num int, t *testing.T) {
 
 	for i := start; i < num; i += 2 {
 		start := time.Now()
-		bus.Publish(topic, i)
+		bus.PublishEx(topic, i, time.Second)
 		dt := time.Now().Sub(start)
 		fmt.Println(topic, ">", i, "dt:", dt)
 	} // for
 }
 
+// Test concurrency
 func TestEvt(t *testing.T) {
 	bus := New(context.Background())
 
@@ -132,6 +134,22 @@ func TestEvt(t *testing.T) {
 	fmt.Printf("cancel: dt=%v\n", dt)
 
 	wgSub.Wait()
+}
+
+// Test publish with timeout
+func TestPublishEx(t *testing.T) {
+	bus := New(context.Background())
+	_ = bus.Subscribe("lazy", 0)
+	start := time.Now()
+	bus.PublishEx("lazy", "nothing", 800*time.Millisecond)
+	bus.PublishEx("lazy", "nothing", 900*time.Millisecond)
+	bus.PublishEx("lazy", "nothing", 1000*time.Millisecond)
+	bus.Flush()
+	dt := time.Now().Sub(start)
+	if dt < 900*time.Millisecond ||
+		dt > 1100*time.Millisecond {
+		t.Fatalf("bad delay: dt=%v, want 1s", dt)
+	}
 }
 
 // EOF: "evt_test.go"

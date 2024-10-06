@@ -38,6 +38,16 @@ func Publish(topic string, msg any) int {
 	return bus.Publish(topic, msg)
 }
 
+// Publish event to topic (non-blocking) with timeout
+func PublishEx(topic string, msg any, timeout time.Duration) int {
+	return bus.PublishEx(topic, msg, timeout)
+}
+
+// Wait until all message publish and delivered
+func Flush() {
+	bus.Flush()
+}
+
 // Get all subscribed topics
 func Topics() []string {
 	return bus.Topics()

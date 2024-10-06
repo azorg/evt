@@ -25,10 +25,17 @@ type Bus struct {
 type BusInterface interface {
 	Subscribe(topic string, size int) *Sub // subscribe to topic event
 	Publish(topic string, msg any) int     // publish event to topic (non-blocking)
-	Topics() []string                      // get all subscribed topics
-	Count(topic string) int                // get count of subscribers
-	Cancel()                               // cancel bus, unsubscribe all subscribers
-	Wait(timeout time.Duration) error      // wait until graceful shutdown
+
+	// Publish event to topic (non-blocking) with timeout
+	PublishEx(topic string, msg any, timeout time.Duration) int
+
+	// Wait until all message publish and delivered
+	Flush()
+
+	Topics() []string                 // get all subscribed topics
+	Count(topic string) int           // get count of subscribers
+	Cancel()                          // cancel bus, unsubscribe all subscribers
+	Wait(timeout time.Duration) error // wait until graceful shutdown
 }
 
 // Create new event bus (broker)
@@ -89,6 +96,43 @@ func (bus *Bus) Publish(topic string, msg any) int {
 	} // for
 
 	return len(ss)
+}
+
+// Publish event to topic (non-blocking) with timeout,
+// return number of actial subscribers
+//
+//		topic - event topic
+//		msg - message (event payload)
+//	 timeout - timeoit of write to each subscriber channel
+func (bus *Bus) PublishEx(topic string, msg any, timeout time.Duration) int {
+	bus.mx.RLock()
+	defer bus.mx.RUnlock()
+
+	ss, ok := bus.topics[topic]
+	if !ok {
+		return 0 // topic not found
+	}
+
+	// Send event to all subscribers
+	for sub := range ss {
+		bus.wgPub.Add(1)
+		go func() {
+			defer bus.wgPub.Done()
+			select {
+			case sub.ch <- msg: // write to subscriber channel
+			case <-time.After(timeout): // break by timeout
+			case <-bus.ctx.Done(): // cancel by context
+			} // select
+		}()
+	} // for
+
+	return len(ss)
+
+}
+
+// Wait until all message publish and delivered
+func (bus *Bus) Flush() {
+	bus.wgPub.Wait()
 }
 
 // Get all subscribed topics
