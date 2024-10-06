@@ -6,7 +6,7 @@ package evt
 type Sub struct {
 	topic string   // subscriber topic
 	bus   *Bus     // pointer to parent bus
-	pss   *subs    // pointer to subscibers set of this topic
+	pss   *subs    // pointer to subscribers set of this topic
 	ch    chan any // event channel
 }
 

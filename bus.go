@@ -52,12 +52,12 @@ func (bus *Bus) Subscribe(topic string, size int) *Sub {
 	defer bus.mx.Unlock()
 
 	ss, ok := bus.topics[topic]
-	if !ok { // no any subscibers
+	if !ok { // no any subscribers
 		ss = subs{}
 		bus.topics[topic] = ss
 	}
 
-	ss[sub] = struct{}{} // add subsciber to set
+	ss[sub] = struct{}{} // add subscriber to set
 	sub.pss = &ss
 	return sub
 }

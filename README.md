@@ -25,7 +25,7 @@
 ### Wait event
 ```go
   msg, ok := sub.Wait() // any, bool
-  if !ok { // subsciber unsibscribed of bus canceled
+  if !ok { // subscriber unsibscribed of bus canceled
    ...
   }
 ```
