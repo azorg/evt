@@ -140,7 +140,7 @@ func (bus *Bus) Wait(timeout time.Duration) bool {
 // Wait context cancel
 func (bus *Bus) goWaitCancel() {
 	defer bus.wgWait.Done()
-	<-bus.ctx.Done()
+	<-bus.ctx.Done() // wait cancel
 	bus.wgPub.Wait()
 
 	bus.mx.Lock()
