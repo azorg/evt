@@ -42,14 +42,12 @@ func Topics() []string {
 	return bus.Topics()
 }
 
-// Cancel bus, unsubscribe all subscribers,
-// cancel publisher goroutines
+// Cancel bus, unsubscribe all subscribers, cancel publisher goroutines
 func Cancel() {
 	bus.Cancel()
 }
 
-// Wait until graceful shutdown,
-// return false on timeout
+// Wait until graceful shutdown, return false on timeout
 func Wait(timeout time.Duration) bool {
 	return bus.Wait(timeout)
 }

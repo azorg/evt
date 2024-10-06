@@ -113,14 +113,12 @@ func (bus *Bus) Count(topic string) int {
 	return len(subs)
 }
 
-// Cancel bus, unsubscribe all subscribers,
-// cancel publisher goroutines
+// Cancel bus, unsubscribe all subscribers, cancel publisher goroutines
 func (bus *Bus) Cancel() {
 	bus.cancel()
 }
 
-// Wait until graceful shutdown,
-// return false on timeout
+// Wait until graceful shutdown, return false on timeout
 func (bus *Bus) Wait(timeout time.Duration) bool {
 	done := make(chan struct{})
 	go func() {
@@ -130,9 +128,9 @@ func (bus *Bus) Wait(timeout time.Duration) bool {
 
 	select {
 	case <-done:
-		return true
+		return true // shutdown success
 	case <-time.After(timeout):
-		return false
+		return false // timeout
 	}
 }
 
