@@ -15,7 +15,7 @@ type SubInterface interface {
 	Topic() string            // return subscriber topic
 	Subscribed() bool         // check subscription
 	C() <-chan any            // get subscriber channel
-	Wait() (msg any, ok bool) // wait event
+	Wait() (msg any, ok bool) // wait event (read from channel)
 	Cancel()                  // unsubsctibe from topic
 }
 
@@ -36,7 +36,7 @@ func (sub *Sub) C() <-chan any {
 	return sub.ch
 }
 
-// Wait event
+// Wait event (read from channel)
 func (sub *Sub) Wait() (msg any, ok bool) {
 	msg, ok = <-sub.ch
 	return // msg, ok
