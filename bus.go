@@ -145,7 +145,7 @@ func (bus *Bus) goWaitCancel() {
 
 	for topic, ss := range bus.topics {
 		for sub := range ss {
-			delete(ss, sub) // delete subsciber from set
+			delete(ss, sub) // delete subscriber from set
 			close(sub.ch)   // close event channel
 
 			// Mark as unsubscribed

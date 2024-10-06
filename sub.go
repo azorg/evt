@@ -51,7 +51,7 @@ func (sub *Sub) Cancel() {
 		return // already unsibscribed
 	}
 
-	delete(*sub.pss, sub) // delete subsciber from set
+	delete(*sub.pss, sub) // delete subscriber from set
 	close(sub.ch)         // close event channel
 
 	// Mark as unsubscribed
