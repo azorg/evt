@@ -85,8 +85,10 @@ func goPub(bus *Bus, topic string, start, num int, t *testing.T) {
 	defer wgPub.Done()
 
 	for i := start; i < num; i += 2 {
+		start := time.Now()
 		bus.Publish(topic, i)
-		fmt.Println(topic, ">", i)
+		dt := time.Now().Sub(start)
+		fmt.Println(topic, ">", i, "dt:", dt)
 	} // for
 }
 
