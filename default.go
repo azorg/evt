@@ -8,7 +8,7 @@ import (
 )
 
 // Default inbox channel size
-const DEFAULT_INBOX_SIZE = 0
+const DEFAULT_INBOX_SIZE = 1000
 
 // Default event bus (one instance)
 var bus *Bus
