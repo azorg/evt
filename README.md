@@ -3,9 +3,9 @@
 ## Features
  - Object oriented lightweight API (only two class: `Bus` and `Sub`)
  - One default event broker (bus) out of the box
- - Two publish methods (directly and to inbox channel)
+ - Two publish methods (directly and buffered to inbox channel)
  - Flush method (including version with timeout)
- - Gracefull shutdown
+ - Graceful shutdown
 
 ## Block diagram of two event ways
 
@@ -23,7 +23,7 @@ Each subscriber channel -> Each subscriber
   bus := evt.Bus(context.Background(), inboxChannelSize) // *evt.Bus
 ```
 
-### Subsctibe to event topic
+### Subscribe to event topic
 ```go
   sub := bus.Subscribe("topic", channelSize) // *evt.Sub
   ...
@@ -35,7 +35,7 @@ Each subscriber channel -> Each subscriber
 ### Wait event
 ```go
   msg, ok := sub.Wait() // any, bool
-  if !ok { // subscriber unsibscribed or bus canceled
+  if !ok { // subscriber unsubscribed or bus canceled
    ...
   }
 ```
@@ -44,7 +44,7 @@ Each subscriber channel -> Each subscriber
 ```go
   select {
   case msg, ok := <-sub.C(): // any, bool
-    if !ok { // subsciber unsibscribed or bus canceled
+    if !ok { // subscriber unsubscribed or bus canceled
       ...
     }
     ...
@@ -102,7 +102,7 @@ Each subscriber channel -> Each subscriber
   sub.Cancel()
 ```
 
-### Gracefull shutdown
+### Graceful shutdown
 ```go
   // Cancel bus, unsubscribe all subscribers, cancel goroutines
   bus.Cancel()

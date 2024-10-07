@@ -2,7 +2,7 @@
 
 package evt
 
-// Subsciber handler
+// Subscriber handler
 type Sub struct {
 	topic string   // subscriber topic
 	bus   *Bus     // pointer to parent bus
@@ -10,13 +10,13 @@ type Sub struct {
 	ch    chan any // event channel
 }
 
-// Subsctiber interface
+// Subscriber interface
 type SubInterface interface {
 	Topic() string            // return subscriber topic
 	Subscribed() bool         // check subscription
 	C() <-chan any            // get subscriber channel
 	Wait() (msg any, ok bool) // wait event (read from channel)
-	Cancel()                  // unsubsctibe from topic
+	Cancel()                  // unsubscribe from topic
 }
 
 // Return subscriber topic
@@ -48,7 +48,7 @@ func (sub *Sub) Cancel() {
 	defer sub.bus.mx.Unlock()
 
 	if sub == nil || sub.bus == nil || sub.pss == nil {
-		return // already unsibscribed
+		return // already unsubscribed
 	}
 
 	delete(*sub.pss, sub) // delete subscriber from set

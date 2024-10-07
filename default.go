@@ -22,7 +22,7 @@ func DefaultBus() *Bus {
 	return bus
 }
 
-// Subsctibe to event topic
+// Subscribe to event topic
 func Subscribe(topic string, size int) *Sub {
 	return bus.Subscribe(topic, size)
 }

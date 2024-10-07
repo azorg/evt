@@ -57,7 +57,7 @@ func TestDefault(t *testing.T) {
 		t.Fatalf(`topics[0] = "%s", wgant "topic"`, topic)
 	}
 
-	// Cancel dafaul event broker
+	// Cancel default event broker
 	start := time.Now()
 	Cancel()
 
@@ -179,7 +179,6 @@ func TestPublishEx(t *testing.T) {
 		t.Fatalf("bad delay: dt=%v, want 500ms", dt)
 	}
 	fmt.Println("dt (500ms):", dt)
-
 }
 
 // EOF: "evt_test.go"
