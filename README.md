@@ -60,6 +60,10 @@ Each subscriber channel -> Each subscriber
       ...
     }
   }
+  if count == 0 { // no any subscribers, message lost
+    ...
+  }
+
   ...
   msg = "world"
   count, err = bus.PublishEx("topic", msg, 3*time.Second) // timeout = 3s
@@ -72,7 +76,7 @@ Each subscriber channel -> Each subscriber
   }
 ```
 
-### Publish event to topic via inbox channel (non-blocking)
+### Publish event to topic via inbox channel (buffered, non-blocking)
 ```go
   msg := "hello"
   bus.PublishInbox("topic", msg)
@@ -100,7 +104,7 @@ Each subscriber channel -> Each subscriber
 
 ### Gracefull shutdown
 ```go
-  // Cancel bus, unsubscribe all subscribers, cancel publisher goroutines
+  // Cancel bus, unsubscribe all subscribers, cancel goroutines
   bus.Cancel()
 	
   err := bus.WaitEx(10*time.Second) // timeout = 10s
