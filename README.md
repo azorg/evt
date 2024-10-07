@@ -107,6 +107,7 @@ Each subscriber channel -> Each subscriber
   // Cancel bus, unsubscribe all subscribers, cancel goroutines
   bus.Cancel()
 	
+  // Wait until graceful shutdown with timeout (wait goroutines finished)
   err := bus.WaitEx(10*time.Second) // timeout = 10s
   if err != nil {
     if errors.Is(err, evt.ErrTimeout) { // timeout

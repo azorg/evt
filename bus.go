@@ -65,10 +65,10 @@ type BusInterface interface {
 	// Cancel bus, unsubscribe all subscribers, cancel goroutines
 	Cancel()
 
-	// Wait until graceful shutdown
+	// Wait until graceful shutdown (wait goroutines finished)
 	Wait()
 
-	// Wait until graceful shutdown with timeout
+	// Wait until graceful shutdown with timeout (wait goroutines finished)
 	WaitEx(timeout time.Duration) error
 }
 
@@ -274,13 +274,13 @@ func (bus *Bus) Cancel() {
 	bus.cancel()
 }
 
-// Wait until graceful shutdown
+// Wait until graceful shutdown (wait goroutines finished)
 func (bus *Bus) Wait() {
 	bus.wgPub.Wait()
 	bus.wgMon.Wait()
 }
 
-// Wait until graceful shutdown with timeout
+// Wait until graceful shutdown with timeout (wait goroutines finished)
 func (bus *Bus) WaitEx(timeout time.Duration) error {
 	if timeout == time.Duration(0) { // infinite wait
 		bus.Wait()

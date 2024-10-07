@@ -77,12 +77,12 @@ func Cancel() {
 	bus.Cancel()
 }
 
-// Wait until graceful shutdown
+// Wait until graceful shutdown (wait goroutines finished)
 func Wait() {
 	bus.Wait()
 }
 
-// Wait until graceful shutdown with timeout
+// Wait until graceful shutdown with timeout (wait goroutines finished)
 func WaitEx(timeout time.Duration) error {
 	return bus.WaitEx(timeout)
 }
