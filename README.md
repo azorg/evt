@@ -35,7 +35,7 @@ Each subscriber channel -> Each subscriber
 ### Wait event
 ```go
   msg, ok := sub.Wait() // any, bool
-  if !ok { // subscriber unsibscribed of bus canceled
+  if !ok { // subscriber unsibscribed or bus canceled
    ...
   }
 ```
