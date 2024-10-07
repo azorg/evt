@@ -12,7 +12,7 @@
 ### Short direct way (may blocking)
 `Publish[Ex](topic, message)` -> Each subscriber channel -> Each subscriber
 
-### Long way via inbox channel (non-blocking)
+### Long buffered way via inbox channel (non-blocking)
 `PublishInbox[Ex](topic, message)` -> Common inbox channel -> Bus monitor ->
 Each subscriber channel -> Each subscriber
 
