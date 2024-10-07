@@ -5,9 +5,9 @@ package evt
 // Subscriber handler
 type Sub struct {
 	topic string   // subscriber topic
+	ch    chan any // event channel
 	bus   *Bus     // pointer to parent bus
 	pss   *subs    // pointer to subscribers set of this topic
-	ch    chan any // event channel
 }
 
 // Subscriber interface
