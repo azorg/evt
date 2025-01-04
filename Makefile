@@ -12,7 +12,7 @@ PKGS = $(PRJ)
 
 .PHONY: all help distclean commit tidy vendor fmt test
 
-all: fmt test
+all: fmt doc test
 
 help:
 	@echo "make all       - format sources and run test"
@@ -27,7 +27,11 @@ help:
 	@echo "make commit    - auto commit by git"
 	@echo "make test      - run test"
 
-distclean:
+clean:
+	@rm -f doc.txt
+	@rm -f doc.md
+
+distclean: clean
 	@rm -f go.mod
 	@rm -f go.sum
 	@#sudo rm -rf go/pkg
@@ -61,5 +65,16 @@ commit: fmt
 
 test: go.mod go.sum
 	@go test
+
+doc: doc.txt doc.md
+
+doc.txt: *.go
+	go doc -all > doc.txt
+
+doc.md: *.go ~/go/bin/gomarkdoc
+	~/go/bin/gomarkdoc -o doc.md
+
+~/go/bin/gomarkdoc:
+	go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
 
 # EOF: "Makefile"
