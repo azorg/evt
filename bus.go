@@ -95,7 +95,7 @@ func New(ctx context.Context, inboxSize int) *Bus {
 // Subsctibe to event topic
 //
 //	topic - event topic
-//	size - channel size of subscribers
+//	size - channel size of subscriber
 func (bus *Bus) Subscribe(topic string, size int) *Sub {
 	sub := &Sub{
 		topic: topic,
