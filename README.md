@@ -116,7 +116,6 @@ if err != nil {
 
 - [Constants](<#constants>)
 - [Variables](<#variables>)
-- [func C\(\) chan\<\- Evt](<#C>)
 - [func Cancel\(\)](<#Cancel>)
 - [func Count\(topic string\) int](<#Count>)
 - [func Flush\(\)](<#Flush>)
@@ -131,7 +130,6 @@ if err != nil {
 - [type Bus](<#Bus>)
   - [func DefaultBus\(\) \*Bus](<#DefaultBus>)
   - [func New\(ctx context.Context, inboxSize int\) \*Bus](<#New>)
-  - [func \(bus \*Bus\) C\(\) chan\<\- Evt](<#Bus.C>)
   - [func \(bus \*Bus\) Cancel\(\)](<#Bus.Cancel>)
   - [func \(bus \*Bus\) Count\(topic string\) int](<#Bus.Count>)
   - [func \(bus \*Bus\) Flush\(\)](<#Bus.Flush>)
@@ -145,7 +143,6 @@ if err != nil {
   - [func \(bus \*Bus\) Wait\(\)](<#Bus.Wait>)
   - [func \(bus \*Bus\) WaitEx\(timeout time.Duration\) error](<#Bus.WaitEx>)
 - [type BusInterface](<#BusInterface>)
-- [type Evt](<#Evt>)
 - [type Sub](<#Sub>)
   - [func Subscribe\(topic string, size int\) \*Sub](<#Subscribe>)
   - [func \(sub \*Sub\) C\(\) \<\-chan any](<#Sub.C>)
@@ -171,15 +168,6 @@ const DefaultInboxSize = 1000
 ```go
 var ErrTimeout = errors.New("timeout")
 ```
-
-<a name="C"></a>
-## func C
-
-```go
-func C() chan<- Evt
-```
-
-Get inbox channel
 
 <a name="Cancel"></a>
 ## func Cancel
@@ -313,15 +301,6 @@ Create new event bus \(broker\)
 ctx - cancel context
 inboxSize - inbox channel size
 ```
-
-<a name="Bus.C"></a>
-### func \(\*Bus\) C
-
-```go
-func (bus *Bus) C() chan<- Evt
-```
-
-Get inbox channel
 
 <a name="Bus.Cancel"></a>
 ### func \(\*Bus\) Cancel
@@ -480,9 +459,6 @@ type BusInterface interface {
     // Get count of event subscribers
     Count(topic string) int
 
-    // Get inbox channel
-    C() chan<- Evt
-
     // Publish event to topic immediately (may blocking)
     Publish(topic string, msg any) (
         count int, err error)
@@ -511,19 +487,6 @@ type BusInterface interface {
 
     // Wait until graceful shutdown with timeout (wait goroutines finished)
     WaitEx(timeout time.Duration) error
-}
-```
-
-<a name="Evt"></a>
-## type Evt
-
-Event
-
-```go
-type Evt struct {
-    Topic   string        // topic name
-    Msg     any           // payload
-    Timeout time.Duration // delivery timeout or zero
 }
 ```
 

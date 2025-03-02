@@ -17,12 +17,12 @@ func TestDefault(t *testing.T) {
 	go func() {
 		count, _ := Publish("topic", "hello")
 		if count != 1 {
-			t.Fatalf(`Publish("hello") return %d, want 1`, count)
+			t.Errorf(`Publish("hello") return %d, want 1`, count)
 		}
 
 		count, _ = PublishEx("topic", "world", time.Second)
 		if count != 1 {
-			t.Fatalf(`Publish("world") return %d, want 1`, count)
+			t.Errorf(`Publish("world") return %d, want 1`, count)
 		}
 	}()
 
@@ -94,7 +94,7 @@ func goSub(sub *Sub, mod int, t *testing.T) {
 
 		i := msg.(int)
 		if (i & 1) != mod {
-			t.Fatalf("subscriber %s read %d", sub.Topic(), i)
+			t.Errorf("subscriber %s read %d", sub.Topic(), i)
 		}
 		fmt.Println(sub.Topic(), "<", i)
 	} // for

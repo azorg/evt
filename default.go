@@ -37,11 +37,6 @@ func Count(topic string) int {
 	return bus.Count(topic)
 }
 
-// Get inbox channel
-func C() chan<- Evt {
-	return bus.C()
-}
-
 // Publish event to topic immediately (may blocking)
 func Publish(topic string, msg any) (int, error) {
 	return bus.Publish(topic, msg)

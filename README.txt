@@ -119,9 +119,6 @@ var ErrTimeout = errors.New("timeout")
 
 FUNCTIONS
 
-func C() chan<- Evt
-    Get inbox channel
-
 func Cancel()
     Cancel bus, unsubscribe all subscribers, cancel goroutines
 
@@ -171,9 +168,6 @@ func New(ctx context.Context, inboxSize int) *Bus
 
         ctx - cancel context
         inboxSize - inbox channel size
-
-func (bus *Bus) C() chan<- Evt
-    Get inbox channel
 
 func (bus *Bus) Cancel()
     Cancel bus, unsubscribe all subscribers, cancel goroutines
@@ -247,9 +241,6 @@ type BusInterface interface {
 	// Get count of event subscribers
 	Count(topic string) int
 
-	// Get inbox channel
-	C() chan<- Evt
-
 	// Publish event to topic immediately (may blocking)
 	Publish(topic string, msg any) (
 		count int, err error)
@@ -280,13 +271,6 @@ type BusInterface interface {
 	WaitEx(timeout time.Duration) error
 }
     Event bus interface
-
-type Evt struct {
-	Topic   string        // topic name
-	Msg     any           // payload
-	Timeout time.Duration // delivery timeout or zero
-}
-    Event
 
 type Sub struct {
 	// Has unexported fields.

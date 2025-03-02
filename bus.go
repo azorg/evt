@@ -12,17 +12,17 @@ import (
 type subs map[*Sub]struct{}
 
 // Event
-type Evt struct {
-	Topic   string        // topic name
-	Msg     any           // payload
-	Timeout time.Duration // delivery timeout or zero
+type event struct {
+	topic   string        // topic name
+	msg     any           // payload
+	timeout time.Duration // delivery timeout or zero
 }
 
 // Event bus (broker)
 type Bus struct {
 	topics map[string]subs // subscribers set for eatch topic
 	mx     sync.RWMutex    // mutex for topics
-	inbox  chan Evt        // inbox buffer channel
+	inbox  chan event      // inbox buffer channel
 	ctx    context.Context // cancel context
 	cancel func()          // context handler
 	wgMon  sync.WaitGroup  // wait monitor goroutine
@@ -40,9 +40,6 @@ type BusInterface interface {
 
 	// Get count of event subscribers
 	Count(topic string) int
-
-	// Get inbox channel
-	C() chan<- Evt
 
 	// Publish event to topic immediately (may blocking)
 	Publish(topic string, msg any) (
@@ -84,7 +81,7 @@ var _ BusInterface = (*Bus)(nil)
 func New(ctx context.Context, inboxSize int) *Bus {
 	bus := &Bus{
 		topics: make(map[string]subs),
-		inbox:  make(chan Evt, inboxSize),
+		inbox:  make(chan event, inboxSize),
 	}
 	bus.ctx, bus.cancel = context.WithCancel(ctx)
 	bus.wgMon.Add(1)
@@ -140,11 +137,6 @@ func (bus *Bus) Count(topic string) int {
 		return 0 // topic not found
 	}
 	return len(subs)
-}
-
-// Get inbox channel
-func (bus *Bus) C() chan<- Evt {
-	return bus.inbox
 }
 
 // Publish event to topic immediately (may blocking)
@@ -222,7 +214,7 @@ func (bus *Bus) PublishInbox(topic string, msg any) {
 	go func() {
 		defer bus.wgPub.Done()
 		select {
-		case bus.inbox <- Evt{Topic: topic, Msg: msg}:
+		case bus.inbox <- event{topic: topic, msg: msg}:
 			bus.wgBuf.Add(1)
 		case <-bus.ctx.Done(): // cancel by context
 		} // select
@@ -239,7 +231,7 @@ func (bus *Bus) PublishInboxEx(topic string, msg any, timeout time.Duration) {
 	go func() {
 		defer bus.wgPub.Done()
 		select {
-		case bus.inbox <- Evt{Topic: topic, Msg: msg, Timeout: timeout}:
+		case bus.inbox <- event{topic: topic, msg: msg, timeout: timeout}:
 			bus.wgBuf.Add(1)
 		case <-bus.ctx.Done(): // cancel by context
 		case <-time.After(timeout): // break by timeout
@@ -319,10 +311,10 @@ func (bus *Bus) goMonitor() {
 			if !ok { // its looks like cancel
 				return
 			}
-			if evt.Timeout == time.Duration(0) {
-				bus.Publish(evt.Topic, evt.Msg)
+			if evt.timeout == time.Duration(0) {
+				bus.Publish(evt.topic, evt.msg)
 			} else {
-				bus.PublishEx(evt.Topic, evt.Msg, evt.Timeout)
+				bus.PublishEx(evt.topic, evt.msg, evt.timeout)
 			}
 			bus.wgBuf.Done()
 		} // select
