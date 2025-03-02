@@ -158,10 +158,10 @@ if err != nil {
 
 ## Constants
 
-<a name="DEFAULT_INBOX_SIZE"></a>Default inbox channel size
+<a name="DefaultInboxSize"></a>Default inbox channel size
 
 ```go
-const DEFAULT_INBOX_SIZE = 1000
+const DefaultInboxSize = 1000
 ```
 
 ## Variables
@@ -434,7 +434,7 @@ Subsctibe to event topic
 
 ```
 topic - event topic
-size - channel size of subscribers
+size - channel size of subscriber
 ```
 
 <a name="Bus.Topics"></a>

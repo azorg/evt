@@ -109,7 +109,7 @@ evt - simple in-process on-memory event bus based on Go channels
 
 CONSTANTS
 
-const DEFAULT_INBOX_SIZE = 1000
+const DefaultInboxSize = 1000
     Default inbox channel size
 
 
@@ -226,7 +226,7 @@ func (bus *Bus) Subscribe(topic string, size int) *Sub
     Subsctibe to event topic
 
         topic - event topic
-        size - channel size of subscribers
+        size - channel size of subscriber
 
 func (bus *Bus) Topics() []string
     Get all subscribed topics

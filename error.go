@@ -1,4 +1,4 @@
-// File: "errors.go"
+// File: "erros.go"
 
 package evt
 
@@ -6,4 +6,4 @@ import "errors"
 
 var ErrTimeout = errors.New("timeout")
 
-// EOF: "errors.go"
+// EOF: "error.go"

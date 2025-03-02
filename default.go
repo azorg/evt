@@ -8,13 +8,13 @@ import (
 )
 
 // Default inbox channel size
-const DEFAULT_INBOX_SIZE = 1000
+const DefaultInboxSize = 1000
 
 // Default event bus (one instance)
 var bus *Bus
 
 func init() {
-	bus = New(context.Background(), DEFAULT_INBOX_SIZE)
+	bus = New(context.Background(), DefaultInboxSize)
 }
 
 // Get default event bus
