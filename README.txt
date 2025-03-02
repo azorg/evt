@@ -30,7 +30,7 @@ evt - simple in-process on-memory event bus based on Go channels
     ...
     topic := sub.Topic() // get subscriber topic
     ...
-    subscribed := sub.Subscribed() // check subscription (bool)
+    subscribed := sub.IsSubscribed() // check subscription (bool)
 
     // Wait event
     // ^^^^^^^^^^
@@ -286,7 +286,7 @@ func (sub *Sub) C() <-chan any
 func (sub *Sub) Cancel()
     Unsubscribe from event topic
 
-func (sub *Sub) Subscribed() bool
+func (sub *Sub) IsSubscribed() bool
     Check subscription
 
 func (sub *Sub) Topic() string
@@ -297,7 +297,7 @@ func (sub *Sub) Wait() (msg any, ok bool)
 
 type SubInterface interface {
 	Topic() string            // return subscriber topic
-	Subscribed() bool         // check subscription
+	IsSubscribed() bool       // check subscription
 	C() <-chan any            // get subscriber channel
 	Wait() (msg any, ok bool) // wait event (read from channel)
 	Cancel()                  // unsubscribe from topic

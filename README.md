@@ -34,7 +34,7 @@ sub := bus.Subscribe("topic", channelSize) // *evt.Sub
 ...
 topic := sub.Topic() // get subscriber topic
 ...
-subscribed := sub.Subscribed() // check subscription (bool)
+subscribed := sub.IsSubscribed() // check subscription (bool)
 
 // Wait event
 // ^^^^^^^^^^
@@ -147,7 +147,7 @@ if err != nil {
   - [func Subscribe\(topic string, size int\) \*Sub](<#Subscribe>)
   - [func \(sub \*Sub\) C\(\) \<\-chan any](<#Sub.C>)
   - [func \(sub \*Sub\) Cancel\(\)](<#Sub.Cancel>)
-  - [func \(sub \*Sub\) Subscribed\(\) bool](<#Sub.Subscribed>)
+  - [func \(sub \*Sub\) IsSubscribed\(\) bool](<#Sub.IsSubscribed>)
   - [func \(sub \*Sub\) Topic\(\) string](<#Sub.Topic>)
   - [func \(sub \*Sub\) Wait\(\) \(msg any, ok bool\)](<#Sub.Wait>)
 - [type SubInterface](<#SubInterface>)
@@ -528,11 +528,11 @@ func (sub *Sub) Cancel()
 
 Unsubscribe from event topic
 
-<a name="Sub.Subscribed"></a>
-### func \(\*Sub\) Subscribed
+<a name="Sub.IsSubscribed"></a>
+### func \(\*Sub\) IsSubscribed
 
 ```go
-func (sub *Sub) Subscribed() bool
+func (sub *Sub) IsSubscribed() bool
 ```
 
 Check subscription
@@ -563,7 +563,7 @@ Subscriber interface
 ```go
 type SubInterface interface {
     Topic() string            // return subscriber topic
-    Subscribed() bool         // check subscription
+    IsSubscribed() bool       // check subscription
     C() <-chan any            // get subscriber channel
     Wait() (msg any, ok bool) // wait event (read from channel)
     Cancel()                  // unsubscribe from topic
