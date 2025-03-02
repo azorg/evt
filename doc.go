@@ -31,7 +31,7 @@ evt - simple in-process on-memory event bus based on Go channels
 	...
 	topic := sub.Topic() // get subscriber topic
 	...
-	subscribed := sub.Subscribed() // check subscription (bool)
+	subscribed := sub.IsSubscribed() // check subscription (bool)
 
 	// Wait event
 	// ^^^^^^^^^^

@@ -13,7 +13,7 @@ type Sub struct {
 // Subscriber interface
 type SubInterface interface {
 	Topic() string            // return subscriber topic
-	Subscribed() bool         // check subscription
+	IsSubscribed() bool       // check subscription
 	C() <-chan any            // get subscriber channel
 	Wait() (msg any, ok bool) // wait event (read from channel)
 	Cancel()                  // unsubscribe from topic
@@ -28,7 +28,7 @@ func (sub *Sub) Topic() string {
 }
 
 // Check subscription
-func (sub *Sub) Subscribed() bool {
+func (sub *Sub) IsSubscribed() bool {
 	bus.mx.RLock()
 	defer bus.mx.RUnlock()
 	return sub != nil && sub.bus != nil && sub.pss != nil
