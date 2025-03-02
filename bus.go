@@ -45,16 +45,18 @@ type BusInterface interface {
 	C() chan<- Evt
 
 	// Publish event to topic immediately (may blocking)
-	Publish(topic string, msg any) int
+	Publish(topic string, msg any) (
+		count int, err error)
 
 	// Publish event to topic immediately with timeout (may blocking)
-	PublishEx(string, msg any) int
+	PublishEx(topic string, msg any, timeout time.Duration) (
+		count int, err error)
 
 	// Publish event to topic via inbox channel (non-blocking)
-	PublishInbox(topic string, msg any) bool
+	PublishInbox(topic string, msg any)
 
 	// Publish event to topic via inbox channel with timeout (non-blocking)
-	PublishInboxEx(topic string, msg any) bool
+	PublishInboxEx(topic string, msg any, timeout time.Duration)
 
 	// Wait until all published message delivered
 	Flush()
@@ -71,6 +73,9 @@ type BusInterface interface {
 	// Wait until graceful shutdown with timeout (wait goroutines finished)
 	WaitEx(timeout time.Duration) error
 }
+
+// Check that *Bus implements the BusInterface
+var _ BusInterface = (*Bus)(nil)
 
 // Create new event bus (broker)
 //
@@ -175,12 +180,12 @@ func (bus *Bus) Publish(topic string, msg any) (
 
 // Publish event to topic immediately with timeout (may blocking)
 //
-//	 topic - event topic
-//	 msg - message (event payload)
-//		timeout - timeoit of write to each subscriber channel
+//	topic - event topic
+//	msg - message (event payload)
+//	timeout - timeoit of write to each subscriber channel
 //
-//	 count - actual number of topic subscribers
-//	 err - nil or context.Canceled or ErrTimeout
+//	count - actual number of topic subscribers
+//	err - nil or context.Canceled or ErrTimeout
 func (bus *Bus) PublishEx(
 	topic string, msg any, timeout time.Duration) (
 	count int, err error) {

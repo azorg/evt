@@ -19,6 +19,9 @@ type SubInterface interface {
 	Cancel()                  // unsubscribe from topic
 }
 
+// Check that *Sub implements the SubInterface
+var _ BusInterface = (*Bus)(nil)
+
 // Return subscriber topic
 func (sub *Sub) Topic() string {
 	return sub.topic

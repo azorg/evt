@@ -2,7 +2,7 @@
 
 PRJ="github.com/azorg/evt"
 
-GIT_MESSAGE = "auto commit"
+GIT_MESSAGE = "WiP: auto commit"
 
 # go source files, ignore vendor directory
 SRC = $(shell find . -type f -name '*.go' -not -path "./vendor/*")
@@ -66,13 +66,13 @@ commit: fmt
 test: go.mod go.sum
 	@go test
 
-doc: doc.txt doc.md
+doc: README.txt README.md
 
-doc.txt: *.go
-	go doc -all > doc.txt
+README.txt: *.go
+	go doc -all > README.txt
 
-doc.md: *.go ~/go/bin/gomarkdoc
-	~/go/bin/gomarkdoc -o doc.md
+README.md: *.go ~/go/bin/gomarkdoc
+	~/go/bin/gomarkdoc -o README.md
 
 ~/go/bin/gomarkdoc:
 	go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest

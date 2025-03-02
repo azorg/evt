@@ -1,3 +1,7 @@
+2025.03.21
+ * switch doc to README.md/README.txt (update "doc.go")
+ * fix BusInterface (bugs)
+
 2025.01.04
  * generate doc.txt/doc.md
 
