@@ -23,7 +23,7 @@ evt - simple in-process on-memory event bus based on Go channels
 # Examples
 
 	  // Create new event bus (broker)
-		// -----------------------------
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 		bus := evt.Bus(context.Background(), inboxChannelSize) // *evt.Bus
 
 		// Subscribe to event topic
@@ -34,14 +34,14 @@ evt - simple in-process on-memory event bus based on Go channels
 		subscribed := sub.Subscribed() // check subscription (bool)
 
 		// Wait event
-		// ----------
+		// ^^^^^^^^^^
 		msg, ok := sub.Wait() // any, bool
 		if !ok { // subscriber unsubscribed or bus canceled
 		...
 		}
 
 		// Read from subscriber channel
-		// ----------------------------
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 		select {
 		case msg, ok := <-sub.C(): // any, bool
 			if !ok { // subscriber unsubscribed or bus canceled
@@ -51,7 +51,7 @@ evt - simple in-process on-memory event bus based on Go channels
 		} // select
 
 		// Publish event to topic directly (may blocking)
-		// ----------------------------------------------
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 		msg := "hello"
 		count, err := bus.Publish("topic", msg)
 		if err != nil {
@@ -74,7 +74,7 @@ evt - simple in-process on-memory event bus based on Go channels
 		}
 
 		// Publish event to topic via inbox channel (buffered, non-blocking)
-		// -----------------------------------------------------------------
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 		msg := "hello"
 		bus.PublishInbox("topic", msg)
 		...
@@ -92,11 +92,11 @@ evt - simple in-process on-memory event bus based on Go channels
 		}
 
 		// Unsubscribe from event topic
-		// ----------------------------
+		// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 		sub.Cancel()
 
 		// Graceful shutdown
-		// -----------------
+		// ^^^^^^^^^^^^^^^^^
 		// Cancel bus, unsubscribe all subscribers, cancel goroutines
 		bus.Cancel()
 
